@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-lft
+  labels:
+    app: nucleus-lft
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-lft
+  template:
+    metadata:
+      labels:
+        app: nucleus-lft
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-lft
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.lft) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: SERVER_IP_OR_HOST
+              value: nucleus-api
+            - name: OMNI_LFT_AUTH_PUBLIC_KEY
+              value: /omni/secrets/jwt_pubkey.pub
+            - name: OMNI_LFT_COMPRESSION
+              value: "0"
+            - name: OMNI_LFT_STRUCTURED_LOGGING
+              value: "0"
+          resources:
+            {{- toYaml .Values.resources.lft | nindent 12 }}
+          ports:
+            - containerPort: 3030
+          volumeMounts:
+            - name: data
+              mountPath: /omni/log
+              subPath: log/lft
+            - name: data
+              mountPath: /omni/data
+              subPath: data
+            - name: crypto-secrets
+              mountPath: /omni/secrets/jwt_pubkey.pub
+              subPath: auth_root_of_trust_pub
+              readOnly: true
+            - name: crypto-secrets
+              mountPath: /omni/secrets/lft_salt
+              subPath: lft_salt
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nucleus-data
+        - name: crypto-secrets
+          secret:
+            secretName: crypto-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-lft
+  labels:
+    app: nucleus-lft
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-lft
+  ports:
+    - name: lft
+      port: 3030
+      targetPort: 3030

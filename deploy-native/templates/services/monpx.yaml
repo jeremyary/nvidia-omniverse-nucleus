@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-monpx
+  labels:
+    app: nucleus-monpx
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-monpx
+  template:
+    metadata:
+      labels:
+        app: nucleus-monpx
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-monpx
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.monpx) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: OMNI_MONPX_SCRAPE_URLS
+              value: "http://nucleus-api:9500/metrics;http://nucleus-api:3010/metrics;http://nucleus-log-processor:9500/metrics"
+            - name: OMNI_MONPX_ALLOWED_METRIC_PREFIXES
+              value: "omni:nginx:redis:exposer:otcollector:otelcol"
+            - name: OMNI_DS_BLACKLIST_PATH
+              value: /omni/data/PathBlackList.json
+          resources:
+            {{- toYaml .Values.resources.monpx | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: data
+              mountPath: /omni/data
+              subPath: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nucleus-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-monpx
+  labels:
+    app: nucleus-monpx
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-monpx
+  ports:
+    - name: metrics
+      port: {{ .Values.ports.metrics }}
+      targetPort: 8080

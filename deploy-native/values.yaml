@@ -1,0 +1,94 @@
+namespace: omniverse-nucleus
+
+# External hostname - set to your OpenShift Route hostname
+serverHost: ""
+
+registry: nvcr.io/nvidia/omniverse
+
+images:
+  api: nucleus-api:1.14.43
+  auth: nucleus-auth:1.5.6
+  discovery: nucleus-discovery:1.5.4
+  lft: nucleus-lft:1.14.43
+  lftLb: nucleus-lft-lb:1.14.43
+  logProcessor: nucleus-log-processor:1.14.43
+  navigator: nucleus-navigator:3.3.5
+  resolverCache: nucleus-resolver-cache:1.14.43
+  search: nucleus-search:3.2.11
+  tagging: nucleus-tagging:3.1.31
+  thumbnails: nucleus-thumbnails:1.5.12
+  monpx: utl-monpx:1.14.43
+
+ports:
+  api: 3009
+  apiAuthenticated: 3106
+  auth: 3100
+  authLoginForm: 3180
+  authApi: 8000
+  discovery: 3333
+  lft: 3030
+  web: 8080
+  search: 3400
+  tagging: 3020
+  metrics: 3010
+
+instanceName: my_omniverse
+
+# Passwords - override these
+masterPassword: omniverse123 #notsecret
+servicePassword: service123 #notsecret
+
+# NVIDIA reference content (S3-hosted assets)
+referenceContent:
+  enabled: true
+  mountTarget: /NVIDIA
+  source: content-production.omniverse.nvidia.com
+  secure: true
+  useCredentials: false
+  bucket: ""
+
+storage:
+  dataSize: 500Gi
+  storageClassName: gp3-csi
+
+# Resource requests and limits per service
+resources:
+  api:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits:   { cpu: "4", memory: 8Gi }
+  auth:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 1Gi }
+  discovery:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  lft:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits:   { cpu: "2", memory: 4Gi }
+  lftLb:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  logProcessor:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  navigator:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  resolverCache:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 2Gi }
+  search:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 2Gi }
+  tagging:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 2Gi }
+  thumbnails:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 4Gi }
+  monpx:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+# NGC pull secret name (created separately)
+imagePullSecret: ngc-pull-secret

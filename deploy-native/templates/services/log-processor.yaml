@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-log-processor
+  labels:
+    app: nucleus-log-processor
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-log-processor
+  template:
+    metadata:
+      labels:
+        app: nucleus-log-processor
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-log-processor
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.logProcessor) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: OMNI_INSTANCE
+              value: {{ .Values.instanceName | quote }}
+            - name: OMNI_PROCESS_LFT_LOGS
+              value: "1"
+            - name: OMNI_STRUCTURED_LOGGING
+              value: "0"
+          resources:
+            {{- toYaml .Values.resources.logProcessor | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /omni/log
+              subPath: log
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nucleus-data

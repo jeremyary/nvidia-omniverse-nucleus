@@ -1,0 +1,137 @@
+{{- $host := .Values.serverHost }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-navigator
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 3600s
+spec:
+  host: {{ $host }}
+  port:
+    targetPort: web
+  to:
+    kind: Service
+    name: nucleus-navigator
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-api
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 86400s
+spec:
+  host: {{ $host }}
+  path: /omni/api
+  port:
+    targetPort: api
+  to:
+    kind: Service
+    name: nucleus-api
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-discovery
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 3600s
+spec:
+  host: {{ $host }}
+  path: /omni/discovery
+  port:
+    targetPort: discovery
+  to:
+    kind: Service
+    name: nucleus-discovery
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-auth
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 3600s
+spec:
+  host: {{ $host }}
+  path: /omni/auth
+  port:
+    targetPort: auth
+  to:
+    kind: Service
+    name: nucleus-auth
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-auth-login
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/rewrite-target: /
+spec:
+  host: {{ $host }}
+  path: /omni/auth-login
+  port:
+    targetPort: auth-login
+  to:
+    kind: Service
+    name: nucleus-auth
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-search
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 3600s
+spec:
+  host: {{ $host }}
+  path: /omni/search
+  port:
+    targetPort: search
+  to:
+    kind: Service
+    name: nucleus-search
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-tagging
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 3600s
+spec:
+  host: {{ $host }}
+  path: /omni/tagging
+  port:
+    targetPort: tagging
+  to:
+    kind: Service
+    name: nucleus-tagging
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nucleus-lft
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 86400s
+    haproxy.router.openshift.io/rewrite-target: /
+spec:
+  host: {{ $host }}
+  path: /omni/lft
+  port:
+    targetPort: lft
+  to:
+    kind: Service
+    name: nucleus-lft-lb

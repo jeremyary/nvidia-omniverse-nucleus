@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-lft-lb
+  labels:
+    app: nucleus-lft-lb
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-lft-lb
+  template:
+    metadata:
+      labels:
+        app: nucleus-lft-lb
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-lft-lb
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.lftLb) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: NGINX_WORKER_PROCESSES
+              value: auto
+            - name: NGINX_WORKER_CONNECTIONS
+              value: "10240"
+            - name: NGINX_MAX_BODY_SIZE
+              value: 10m
+            - name: OMNI_LFT_RR_HOSTNAME
+              value: nucleus-lft
+            - name: OMNI_LFT_PORT
+              value: "3030"
+          resources:
+            {{- toYaml .Values.resources.lftLb | nindent 12 }}
+          ports:
+            - containerPort: 3030
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-lft-lb
+  labels:
+    app: nucleus-lft-lb
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-lft-lb
+  ports:
+    - name: lft
+      port: {{ .Values.ports.lft }}
+      targetPort: 3030

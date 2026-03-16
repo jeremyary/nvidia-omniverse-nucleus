@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-resolver-cache
+  labels:
+    app: nucleus-resolver-cache
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-resolver-cache
+  template:
+    metadata:
+      labels:
+        app: nucleus-resolver-cache
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-resolver-cache
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.resolverCache) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+          resources:
+            {{- toYaml .Values.resources.resolverCache | nindent 12 }}
+          ports:
+            - containerPort: 8891
+          volumeMounts:
+            - name: data
+              mountPath: /omni/data
+              subPath: resolver-cache
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nucleus-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-resolver-cache
+  labels:
+    app: nucleus-resolver-cache
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-resolver-cache
+  ports:
+    - name: cache
+      port: 8891
+      targetPort: 8891

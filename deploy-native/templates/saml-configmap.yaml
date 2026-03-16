@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nucleus-saml
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+data:
+  federation.meta.blank.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
+    </md:EntityDescriptor>

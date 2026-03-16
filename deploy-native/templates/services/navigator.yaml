@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-navigator
+  labels:
+    app: nucleus-navigator
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-navigator
+  template:
+    metadata:
+      labels:
+        app: nucleus-navigator
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-navigator
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.navigator) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: PUBLIC_URL
+              value: /
+            - name: SSL
+              value: "0"
+            - name: SETTINGS_JSON
+              value: |
+                {
+                  "etag": "a66b3b6fc8bc5aa68b06f4eba0cb8c8e",
+                  "features": { "soft-delete": 0 },
+                  "storages": {
+                    "items": [
+                      {
+                        "name": "{{ .Values.serverHost }}",
+                        "provider": { "type": "nucleus" }
+                      }
+                    ],
+                    "readOnly": true
+                  }
+                }
+          resources:
+            {{- toYaml .Values.resources.navigator | nindent 12 }}
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-navigator
+  labels:
+    app: nucleus-navigator
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-navigator
+  ports:
+    - name: web
+      port: {{ .Values.ports.web }}
+      targetPort: 80

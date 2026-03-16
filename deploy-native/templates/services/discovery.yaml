@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-discovery
+  labels:
+    app: nucleus-discovery
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-discovery
+  template:
+    metadata:
+      labels:
+        app: nucleus-discovery
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-discovery
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.discovery) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: CANONICAL_NAME
+              value: {{ .Values.serverHost | quote }}
+            - name: SERVICE_TOKEN
+              value: /omni/secrets/SERVICE_TOKEN
+            - name: SERVICE_PUBLIC_KEY
+              value: /omni/secrets/SERVICE_PUBLIC_KEY
+            - name: WS_MAX_HTTP_LINE
+              value: "65535"
+            - name: SERVICE_STRUCTURED_LOGGING
+              value: "0"
+            - name: SERVICE_DEPLOYMENTS
+              value: |
+                reg:
+                  - name: external
+                    transport:
+                      type: sows
+                      params:
+                        host: {{ .Values.serverHost }}
+                        port: 80
+                        path: /omni/discovery
+                  - name: internal
+                    transport:
+                      type: sows
+                      params:
+                        host: nucleus-discovery
+                        port: 3333
+          resources:
+            {{- toYaml .Values.resources.discovery | nindent 12 }}
+          ports:
+            - containerPort: 3333
+          volumeMounts:
+            - name: crypto-secrets
+              mountPath: /omni/secrets/SERVICE_TOKEN
+              subPath: svc_reg_token
+              readOnly: true
+            - name: crypto-secrets
+              mountPath: /omni/secrets/SERVICE_PUBLIC_KEY
+              subPath: auth_root_of_trust_pub
+              readOnly: true
+      volumes:
+        - name: crypto-secrets
+          secret:
+            secretName: crypto-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-discovery
+  labels:
+    app: nucleus-discovery
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-discovery
+  ports:
+    - name: discovery
+      port: {{ .Values.ports.discovery }}
+      targetPort: 3333

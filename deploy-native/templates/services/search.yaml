@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus-search
+  labels:
+    app: nucleus-search
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nucleus-search
+  template:
+    metadata:
+      labels:
+        app: nucleus-search
+    spec:
+      serviceAccountName: nucleus
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: nucleus-search
+          image: {{ include "nucleus.image" (dict "root" . "image" .Values.images.search) }}
+          env:
+            - name: ACCEPT_EULA
+              value: "1"
+            - name: SERVICE_BACKEND_USER
+              value: search_service
+            - name: SERVICE_BACKEND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nucleus-passwords
+                  key: service-password
+            - name: SERVICE_HOST
+              value: 0.0.0.0
+            - name: SERVICE_PORT
+              value: "3400"
+            - name: SERVICE_DEPLOYMENTS_LOOKUP
+              value: internal
+            - name: SERVICE_DISCOVERY_TOKEN
+              value: /omni/secrets/SERVICE_DISCOVERY_TOKEN
+            - name: SERVICE_DISCOVERY_URL
+              value: ws://nucleus-discovery:3333
+            - name: SERVICE_AUTH_PUBLIC_KEY
+              value: /omni/secrets/SERVICE_AUTH_PUBLIC_KEY
+            - name: SERVICE_STRUCTURED_LOGGING
+              value: "0"
+            - name: SERVICE_USE_OMNI_CONFIG
+              value: "0"
+            - name: SERVICE_DEPLOYMENTS
+              value: |
+                reg:
+                  - name: external
+                    transport:
+                      type: sows
+                      params:
+                        host: {{ .Values.serverHost }}
+                        port: 80
+                        path: /omni/search
+                  - name: internal
+                    transport:
+                      type: sows
+                      params:
+                        host: nucleus-search
+                        port: {{ .Values.ports.search }}
+          resources:
+            {{- toYaml .Values.resources.search | nindent 12 }}
+          ports:
+            - containerPort: 3400
+          volumeMounts:
+            - name: crypto-secrets
+              mountPath: /omni/secrets/SERVICE_DISCOVERY_TOKEN
+              subPath: svc_reg_token
+              readOnly: true
+            - name: crypto-secrets
+              mountPath: /omni/secrets/SERVICE_AUTH_PUBLIC_KEY
+              subPath: auth_root_of_trust_pub
+              readOnly: true
+      volumes:
+        - name: crypto-secrets
+          secret:
+            secretName: crypto-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nucleus-search
+  labels:
+    app: nucleus-search
+    {{- include "nucleus.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: nucleus-search
+  ports:
+    - name: search
+      port: {{ .Values.ports.search }}
+      targetPort: 3400

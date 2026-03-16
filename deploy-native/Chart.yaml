@@ -1,0 +1,5 @@
+apiVersion: v2
+name: omniverse-nucleus
+description: NVIDIA Omniverse Nucleus on OpenShift (native Kubernetes, no DIND)
+version: 0.1.0
+appVersion: "2023.2.7"

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nucleus-config
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+data:
+  SERVER_IP_OR_HOST: {{ .Values.serverHost | quote }}
+  INSTANCE_NAME: {{ .Values.instanceName | quote }}
+  ACCEPT_EULA: "1"
+  SECURITY_REVIEWED: "1"
+  ENABLE_VERSIONING: "1"
+  ENABLE_STRUCTURED_LOGGING: "0"
+  LFT_COMPRESSION: "0"
+  CREDENTIAL_UI_VISIBLE: "true"
+  USE_SAML_SSO: "0"
+  USE_OPENID_SSO: "0"
+  USE_OPENID_SERVICE_ACCOUNTS: "0"
+  REFERENCE_CONTENT_MOUNT_ENABLE: {{ if .Values.referenceContent.enabled }}"1"{{ else }}"0"{{ end }}
+  REFERENCE_CONTENT_MOUNT_TARGET: {{ .Values.referenceContent.mountTarget | quote }}
+  REFERENCE_CONTENT_SOURCE: {{ .Values.referenceContent.source | quote }}
+  REFERENCE_CONTENT_SECURE: {{ if .Values.referenceContent.secure }}"1"{{ else }}"0"{{ end }}
+  REFERENCE_CONTENT_USE_CREDENTIALS: {{ if .Values.referenceContent.useCredentials }}"1"{{ else }}"0"{{ end }}
+  REFERENCE_CONTENT_BUCKET: {{ .Values.referenceContent.bucket | quote }}
+  REFERENCE_CONTENT_SOURCE_REGION: ""
+  REFERENCE_CONTENT_BUCKET_ACCESS_KEY_ID: ""
+  REFERENCE_CONTENT_BUCKET_SECRET_ACCESS_KEY: ""
+  REFERENCE_CONTENT_NON_COMPLIANT_XML_SCHEMA: "0"
