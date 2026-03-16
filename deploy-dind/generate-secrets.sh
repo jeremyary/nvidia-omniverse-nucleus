@@ -112,6 +112,13 @@ oc create secret docker-registry ngc-pull-secret \
     --dry-run=client -o yaml | oc apply -f - \
     && echo "   ✓ Created ngc-pull-secret"
 
+echo "   Creating NGC API key secret for container login..."
+oc create secret generic ngc-api-key \
+    --from-literal=NGC_API_KEY="$NGC_API_KEY" \
+    -n "$NAMESPACE" \
+    --dry-run=client -o yaml | oc apply -f - \
+    && echo "   ✓ Created ngc-api-key secret"
+
 # 2. Master Password Secret
 echo "2. Master Password Secret..."
 MASTER_PASSWORD=${MASTER_PASSWORD:-"omniverse123"}

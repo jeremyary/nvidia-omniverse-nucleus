@@ -1,5 +1,6 @@
 # NGC credentials
 .env
+!.env.example
 
 # Extracted NGC packages
 nucleus-stack-*/

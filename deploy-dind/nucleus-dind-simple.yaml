@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nucleus-dind-data
-  namespace: hacohen-omniverse
+  namespace: NAMESPACE_PLACEHOLDER
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nucleus-dind
-  namespace: hacohen-omniverse
+  namespace: NAMESPACE_PLACEHOLDER
   labels:
     app: nucleus-dind
 spec:
@@ -41,7 +41,7 @@ spec:
           - |
             echo "Waiting for LoadBalancer hostname..."
             for i in $(seq 1 60); do
-              LB_HOST=$(oc get service nucleus-dind -n hacohen-omniverse -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+              LB_HOST=$(oc get service nucleus-dind -n NAMESPACE_PLACEHOLDER -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
               if [ -n "$LB_HOST" ]; then
                 echo "LoadBalancer ready: $LB_HOST"
                 echo "$LB_HOST" > /shared/loadbalancer-hostname
@@ -223,7 +223,10 @@ spec:
           - name: DOCKER_HOST
             value: tcp://localhost:2375
           - name: NGC_API_KEY
-            value: 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
+            valueFrom:
+              secretKeyRef:
+                name: ngc-api-key
+                key: NGC_API_KEY
           - name: MASTER_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -266,7 +269,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nucleus-dind
-  namespace: hacohen-omniverse
+  namespace: NAMESPACE_PLACEHOLDER
   labels:
     app: nucleus-dind
 spec:

@@ -30,6 +30,14 @@ echo "Namespace: $NAMESPACE"
 echo "======================================"
 echo ""
 
+# Ensure namespace exists
+if ! oc get namespace "$NAMESPACE" &>/dev/null; then
+    echo "==> Namespace '$NAMESPACE' not found. Creating..."
+    oc new-project "$NAMESPACE"
+    echo "✓ Namespace created"
+    echo ""
+fi
+
 # Check if crypto secrets exist, if not generate them
 if ! oc get secret crypto-secrets -n "$NAMESPACE" &>/dev/null; then
     echo "==> Crypto secrets not found. Generating..."
@@ -39,7 +47,7 @@ if ! oc get secret crypto-secrets -n "$NAMESPACE" &>/dev/null; then
 fi
 
 echo "==> Step 1: Creating ServiceAccount and SCC binding..."
-oc apply -f "$SCRIPT_DIR/privileged-sa.yaml"
+sed "s/NAMESPACE_PLACEHOLDER/$NAMESPACE/g" "$SCRIPT_DIR/privileged-sa.yaml" | oc apply -f -
 oc adm policy add-scc-to-user privileged -z nucleus-dind-sa -n "$NAMESPACE" 2>/dev/null || true
 echo "✓ ServiceAccount created"
 
@@ -88,9 +96,9 @@ echo ""
 echo "==> Step 4: Preparing nucleus.env for LoadBalancer..."
 cp "$BASE_STACK/nucleus-stack.env" /tmp/nucleus.env
 
-# Accept EULA
-sed -i '' 's/^ACCEPT_EULA=.*/ACCEPT_EULA=1/' /tmp/nucleus.env
-sed -i '' 's/^SECURITY_REVIEWED=.*/SECURITY_REVIEWED=1/' /tmp/nucleus.env
+# Accept EULA (compatible with both GNU and BSD sed)
+sed -i 's/^ACCEPT_EULA=.*/ACCEPT_EULA=1/' /tmp/nucleus.env
+sed -i 's/^SECURITY_REVIEWED=.*/SECURITY_REVIEWED=1/' /tmp/nucleus.env
 
 # Ensure CONTAINER_SUBNET is present
 if ! grep -q "^CONTAINER_SUBNET=" /tmp/nucleus.env; then
@@ -119,17 +127,12 @@ oc create configmap nucleus-compose-files \
 echo "✓ ConfigMap created"
 
 echo ""
-echo "==> Step 6: Creating PVC for Nucleus data..."
-oc apply -f "$SCRIPT_DIR/nucleus-dind-simple.yaml" | grep "persistentvolumeclaim"
-echo "✓ PVC created"
+echo "==> Step 6: Deploying PVC, Deployment, and Service..."
+sed "s/NAMESPACE_PLACEHOLDER/$NAMESPACE/g" "$SCRIPT_DIR/nucleus-dind-simple.yaml" | oc apply -f -
+echo "✓ Resources created"
 
 echo ""
-echo "==> Step 7: Deploying DIND pod..."
-oc apply -f "$SCRIPT_DIR/nucleus-dind-simple.yaml"
-echo "✓ Deployment created"
-
-echo ""
-echo "==> Step 8: Waiting for LoadBalancer to provision..."
+echo "==> Step 7: Waiting for LoadBalancer to provision..."
 echo "(This may take 2-5 minutes for AWS ELB to provision)"
 echo ""
 

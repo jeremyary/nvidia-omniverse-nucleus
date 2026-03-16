@@ -48,7 +48,7 @@ echo "  - Deployment: nucleus-dind"
 echo "  - Service: nucleus-dind (LoadBalancer)"
 echo "  - ConfigMap: nucleus-compose-files"
 echo "  - ServiceAccount: nucleus-dind-sa"
-echo "  - Secrets: crypto-secrets"
+echo "  - Secrets: crypto-secrets, ngc-pull-secret, ngc-api-key, master-password, service-password"
 echo ""
 
 if [ "$PVC_EXISTS" -gt 0 ]; then
@@ -107,7 +107,7 @@ echo "✓ Role deleted"
 
 echo ""
 echo "==> Step 8: Deleting Secrets..."
-oc delete secret crypto-secrets -n "$NAMESPACE" --ignore-not-found=true
+oc delete secret crypto-secrets ngc-pull-secret ngc-api-key master-password service-password -n "$NAMESPACE" --ignore-not-found=true
 echo "✓ Secrets deleted"
 
 echo ""
